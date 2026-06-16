@@ -1,0 +1,402 @@
+.shell {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.topbar h1,
+.panel h2,
+.queueItem h3,
+.inventoryItem h3,
+.taskItem h3 {
+  margin: 0;
+}
+
+.topbar h1 {
+  font-size: clamp(2.6rem, 5vw, 5.25rem);
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  max-width: 640px;
+  margin: 0.7rem 0 0;
+  color: var(--color-ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.framework {
+  display: grid;
+  min-width: 280px;
+  border: var(--border-strong);
+  background: var(--color-surface);
+}
+
+.framework span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height);
+  border-bottom: var(--border-strong);
+  color: var(--color-ink);
+  font-weight: 950;
+}
+
+.framework span:last-child {
+  border-bottom: 0;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.metric,
+.panel {
+  border: var(--border-strong);
+  background: var(--color-surface);
+}
+
+.metric {
+  min-height: 116px;
+  padding: 16px;
+}
+
+.metric p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 18px;
+  font-size: 2.35rem;
+  line-height: 1;
+}
+
+.layoutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(360px, 0.7fr);
+  gap: 12px;
+}
+
+.mainColumn,
+.sideColumn,
+.queueList,
+.formStack,
+.taskList,
+.routeList,
+.auditList {
+  display: grid;
+  gap: 12px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panelHeader,
+.queueTopline,
+.queueFooter,
+.taskItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHeader {
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: var(--border-hairline);
+}
+
+.panel h2 {
+  font-size: 1.15rem;
+  text-transform: uppercase;
+}
+
+.countBadge,
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: var(--border-strong);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0 0.7rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusPill[data-status="connected"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.statusPill[data-status="offline"] {
+  background: #ffe8d8;
+}
+
+.queueItem,
+.inventoryItem,
+.taskItem,
+.routeItem,
+.auditItem,
+.resultBox {
+  border: var(--border-strong);
+  background: var(--color-page);
+  padding: 14px;
+}
+
+.queueItem h3,
+.inventoryItem h3,
+.taskItem h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.queueItem p,
+.inventoryItem p,
+.taskItem p,
+.routeItem p,
+.auditItem p,
+.resultBox p {
+  margin: 0;
+}
+
+.queueTopline p,
+.taskItem p,
+.routeItem span,
+.auditItem span,
+.auditItem strong,
+.explanation,
+.resultBox small {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.explanation {
+  margin-top: 12px;
+}
+
+.queueFooter {
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: var(--border-hairline);
+  color: var(--color-ink-soft);
+  font-size: 0.9rem;
+}
+
+.queueFooter strong {
+  color: var(--color-ink);
+}
+
+.toneUrgent,
+.toneReview,
+.toneMonitor,
+.toneNeutral {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: var(--border-strong);
+  font-size: 0.74rem;
+  font-weight: 950;
+  padding: 0 0.55rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.toneUrgent {
+  background: #ffd9d3;
+  color: var(--color-ink);
+}
+
+.toneReview {
+  background: #ffe8b7;
+  color: var(--color-ink);
+}
+
+.toneMonitor {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+.toneNeutral {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.inventoryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stockBar {
+  height: 14px;
+  margin: 14px 0 10px;
+  border: var(--border-strong);
+  background: var(--color-surface);
+}
+
+.stockBar span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.quickRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quickButton {
+  min-height: var(--control-height);
+  border: var(--border-strong);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-weight: 950;
+  transition:
+    background 160ms ease-in-out,
+    color 160ms ease-in-out,
+    transform 100ms ease;
+}
+
+.quickButton:hover {
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+
+.quickButton:active {
+  transform: translateY(1px);
+}
+
+.resultBox {
+  margin-top: 12px;
+  background: var(--color-accent-soft);
+}
+
+.resultBox strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.resultBox small {
+  display: block;
+  margin-top: 0.65rem;
+}
+
+.taskItem {
+  align-items: center;
+}
+
+.taskItem > div {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.routeItem,
+.auditItem {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.routeItem strong,
+.auditItem strong {
+  color: var(--color-ink);
+}
+
+@media (max-width: 1120px) {
+  .topbar,
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    display: grid;
+  }
+
+  .framework {
+    min-width: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .framework span {
+    border-right: var(--border-strong);
+    border-bottom: 0;
+  }
+
+  .framework span:last-child {
+    border-right: 0;
+  }
+
+  .layoutGrid {
+    display: grid;
+  }
+
+  .summaryGrid,
+  .inventoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .shell {
+    padding: 12px;
+  }
+
+  .summaryGrid,
+  .inventoryGrid,
+  .quickRow {
+    grid-template-columns: 1fr;
+  }
+
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sideColumn {
+    min-width: 0;
+  }
+
+  .panelHeader,
+  .queueTopline,
+  .queueFooter,
+  .taskItem {
+    display: grid;
+    justify-content: stretch;
+  }
+}

@@ -1,0 +1,256 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-page: #f7f9fa;
+  --color-surface: #ffffff;
+  --color-ink: #11161a;
+  --color-ink-soft: #2e383d;
+  --color-muted: #6b767c;
+  --color-accent: #0f766e;
+  --color-accent-soft: #d9eee9;
+  --radius-none: 0px;
+  --border-strong: 1.5px solid var(--color-ink);
+  --border-hairline: 1px solid #c7d2d8;
+  --shadow-focus: 0 0 0 3px rgba(15, 118, 110, 0.16);
+  --control-height: 58px;
+  --textarea-min-height: 132px;
+  --transition-fast: 160ms ease-in-out;
+  --transition-smooth: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* NeoControls custom theme variables */
+  --neo-teal: #0f766e;
+  --neo-teal-dark: #0a5c56;
+  --neo-teal-soft: #d9f2ef;
+  --neo-teal-focus: rgba(15, 118, 110, 0.12);
+  --neo-bg: #f7fafb;
+  --neo-surface: #ffffff;
+  --neo-ink: #11161a;
+  --neo-muted: #6b767c;
+  --neo-radius: 16px;
+  --neo-radius-lg: 22px;
+  --neo-border-w: 3px;
+  --neo-control-h: 58px;
+  --neo-textarea-h: 132px;
+}
+
+/* ───── Reset ───── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family:
+    var(--font-inter, Inter),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+/* ───── Hero background ───── */
+
+.xdc-network-bg {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(54, 241, 212, 0.26), transparent 32rem),
+    radial-gradient(circle at 88% 18%, rgba(128, 231, 255, 0.16), transparent 28rem),
+    linear-gradient(135deg, #06131f 0%, #0a1b2d 45%, #07111b 100%);
+}
+
+.xdc-network-bg::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image:
+    linear-gradient(rgba(128, 231, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 231, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(54, 241, 212, 0.28) 1px, transparent 2px);
+  background-position: 0 0, 0 0, 0 0;
+  background-size: 72px 72px, 72px 72px, 42px 42px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
+}
+
+.xdc-orbit {
+  position: absolute;
+  right: -140px;
+  top: -180px;
+  width: 520px;
+  height: 520px;
+  border: 1px solid rgba(128, 231, 255, 0.18);
+  border-radius: 9999px;
+}
+
+.xdc-orbit::before,
+.xdc-orbit::after {
+  position: absolute;
+  border: 1px solid rgba(54, 241, 212, 0.18);
+  border-radius: inherit;
+  content: "";
+}
+
+.xdc-orbit::before {
+  inset: 72px;
+}
+
+.xdc-orbit::after {
+  inset: 148px;
+}
+
+/* ───── Typography ───── */
+
+.xdc-display {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.xdc-wordmark {
+  letter-spacing: 0;
+  transform: scaleX(1.12);
+}
+
+/* ───── Form resets ───── */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  line-height: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+/* ───── Animations ───── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s var(--transition-smooth) both;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease both;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease both;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* ───── Focus ring utility ───── */
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ───── Scrollbar ───── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b0bec5;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #78909c;
+}

@@ -1,0 +1,20 @@
+
+# Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
+
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
