@@ -1,109 +1,55 @@
 from __future__ import annotations
-
-from typing import Literal
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
-RiskLevel = Literal["urgent", "review", "monitor"]
-TaskStatus = Literal["open", "done"]
+class Depot(BaseModel):
+    id: str = Field(..., description="Unique depot identifier")
+    name: str = Field(..., description="Depot / Warehouse name")
+    stock: int = Field(..., description="Vaccine stock quantity available (doses)")
+    lat: float = Field(..., description="Latitude coordinate")
+    lng: float = Field(..., description="Longitude coordinate")
 
+class Clinic(BaseModel):
+    id: str = Field(..., description="Unique clinic identifier")
+    name: str = Field(..., description="Clinic / Health center name")
+    demand: int = Field(..., description="Vaccine demand quantity required (doses)")
+    lat: float = Field(..., description="Latitude coordinate")
+    lng: float = Field(..., description="Longitude coordinate")
 
-class Mother(BaseModel):
-    adherenceRate: int
-    clinic: str
-    gestationalWeek: int
-    id: str
-    lastCheckIn: str
-    missedDoses: int
-    name: str
-    phone: str
-    riskLevel: RiskLevel
-    village: str
+class AllocationRoute(BaseModel):
+    depot_id: str
+    depot_name: str
+    clinic_id: str
+    clinic_name: str
+    allocated_doses: int
+    distance_km: float
+    cost: float
+    geometry: Optional[List[List[float]]] = Field(None, description="Array of [lat, lng] road polyline waypoints from OSRM")
 
+class SolverResult(BaseModel):
+    solver_name: str
+    solver_type: str  # "quantum" or "classical"
+    solve_time_ms: float
+    total_cost: float
+    unmet_demand: int
+    qubit_count: Optional[int] = None
+    qubo_energy: Optional[float] = None
+    status: str
+    allocations: List[AllocationRoute]
 
-class RiskAlert(BaseModel):
-    action: Literal["Review", "Refill", "Monitor"]
-    explanation: str
-    id: str
-    motherId: str
-    motherName: str
-    priorityScore: int
-    receivedAt: str
-    riskLevel: RiskLevel
-    signals: list[str]
-    status: Literal["open", "in_review", "resolved"] = "open"
+class OptimizationRequest(BaseModel):
+    depots: Optional[List[Depot]] = None
+    clinics: Optional[List[Clinic]] = None
 
+class ComparativeSummary(BaseModel):
+    cost_difference: float
+    time_ratio: str
+    verdict: str
 
-class InventoryItem(BaseModel):
-    clinic: str
-    daysRemaining: int
-    id: str
-    item: str
-    lastUpdated: str
-    reorderPoint: int
-    stock: int
-    status: Literal["critical", "warning", "stable"]
-
-
-class FieldTask(BaseModel):
-    action: str
-    assignee: str
-    dueInHours: int
-    id: str
-    location: str
-    priority: RiskLevel
-    status: TaskStatus = "open"
-
-
-class DeliveryRoute(BaseModel):
-    clinics: list[str]
-    etaMinutes: int
-    id: str
-    rider: str
-    status: Literal["ready", "active", "queued"]
-    stops: int
-
-
-class AuditEvent(BaseModel):
-    actor: str
-    event: str
-    id: str
-    time: str
-
-
-class SummaryMetric(BaseModel):
-    label: str
-    tone: Literal["urgent", "review", "monitor", "neutral"]
-    value: str
-
-
-class DashboardData(BaseModel):
-    auditTrail: list[AuditEvent]
-    inventory: list[InventoryItem]
-    mothers: list[Mother]
-    riskQueue: list[RiskAlert]
-    routes: list[DeliveryRoute]
-    summary: list[SummaryMetric]
-    tasks: list[FieldTask]
-
-
-class IntakePayload(BaseModel):
-    clinic: str
-    message: str = Field(min_length=2)
-    motherId: str | None = None
-    motherName: str = Field(min_length=2)
-
-
-class IntakeResult(BaseModel):
-    alert: RiskAlert
-    extractedSignals: list[str]
-    recommendedAction: str
-    safetyNote: str
-    task: FieldTask
-
-
-class RestockPayload(BaseModel):
-    amount: int = Field(gt=0)
-
-
-class AlertStatusPayload(BaseModel):
-    status: Literal["open", "in_review", "resolved"]
+class OptimizationResponse(BaseModel):
+    district_name: str
+    depots: List[Depot]
+    clinics: List[Clinic]
+    quantum_result: SolverResult
+    classical_result: SolverResult
+    comparison_summary: ComparativeSummary

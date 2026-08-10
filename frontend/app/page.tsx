@@ -1,560 +1,283 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { Cpu, RotateCw, AlertCircle, Server, Sliders } from "lucide-react";
+import ComparisonCards, {
+  SolverResult,
+  ComparativeSummary,
+} from "@/components/dashboard/ComparisonCards";
+import LocationManager from "@/components/dashboard/LocationManager";
 
-import {
-  activateRoute,
-  completeTask,
-  fallbackDashboard,
-  fetchDashboard,
-  restockInventory,
-  submitIntake,
-  updateAlertStatus,
-} from "@/lib/api";
-import {
-  createOfflineIntake,
-  mergeIntake,
-} from "@/lib/intake";
-import {
-  pipelineStages,
-  quickMessages,
-} from "@/lib/constants";
-import type {
-  PipelineStage,
-  QueueFilter,
-  InventoryFilter,
-} from "@/lib/constants";
-import {
-  Header,
-  NetworkIntro,
-  SummaryMetrics,
-  PipelineStages,
-  RiskQueue,
-  InventoryWatch,
-  SignalSimulator,
-  TaskQueue,
-  DeliveryRoutes,
-  AuditTrail,
-  Footer,
-} from "@/components/dashboard";
-import { ActionButton } from "@/components/ui";
-import type {
-  AlertStatus,
-  DashboardData,
-  IntakePayload,
-  IntakeResult,
-  RiskAlert,
-} from "@/types/medrush";
+// Dynamically import Leaflet MapComponent to disable Server Side Rendering (SSR)
+const MapComponent = dynamic(
+  () => import("@/components/dashboard/MapComponent"),
+  { ssr: false }
+);
 
-export default function Home() {
-  const [data, setData] = useState<DashboardData>(fallbackDashboard);
-  const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "offline">(
-    "checking",
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeStage, setActiveStage] = useState<PipelineStage>("reason");
-  const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
-  const [inventoryFilter, setInventoryFilter] = useState<InventoryFilter>("all");
-  const [focusedMetric, setFocusedMetric] = useState<string>("All signals");
-  const [busyAction, setBusyAction] = useState<string | null>(null);
-  const [motherName, setMotherName] = useState("Ayu S.");
-  const [clinic, setClinic] = useState("Puskesmas Cibiru");
-  const [message, setMessage] = useState(quickMessages[0]);
-  const [missedDose, setMissedDose] = useState(true);
-  const [needsStock, setNeedsStock] = useState(false);
-  const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterMessage, setNewsletterMessage] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showScrollTop, setShowScrollTop] = useState(false);
+interface Depot {
+  id: string;
+  name: string;
+  stock: number;
+  lat: number;
+  lng: number;
+}
 
-  /* ── Data fetch ── */
+interface Clinic {
+  id: string;
+  name: string;
+  demand: number;
+  lat: number;
+  lng: number;
+}
 
-  useEffect(() => {
-    setIsLoading(true);
-    fetchDashboard()
-      .then((dashboard) => {
-        setData(dashboard);
-        setApiStatus(dashboard === fallbackDashboard ? "offline" : "connected");
-      })
-      .catch(() => {
-        setApiStatus("offline");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+const DEFAULT_KARAWANG_DEPOTS: Depot[] = [
+  { id: "d1", name: "Dinkes Karawang", stock: 500, lat: -6.306, lng: 107.302 },
+  { id: "d2", name: "Gudang Farmasi Klari", stock: 450, lat: -6.352, lng: 107.361 },
+  { id: "d3", name: "Depot Rengasdengklok", stock: 350, lat: -6.159, lng: 107.297 },
+];
 
-  /* ── Scroll-to-top visibility ── */
+const DEFAULT_KARAWANG_CLINICS: Clinic[] = [
+  { id: "c1", name: "Puskesmas Karawang Barat", demand: 200, lat: -6.301, lng: 107.291 },
+  { id: "c2", name: "Puskesmas Telukjambe", demand: 180, lat: -6.328, lng: 107.315 },
+  { id: "c3", name: "Puskesmas Klari", demand: 250, lat: -6.345, lng: 107.375 },
+  { id: "c4", name: "Puskesmas Rengasdengklok", demand: 220, lat: -6.162, lng: 107.294 },
+  { id: "c5", name: "Puskesmas Rawamerta", demand: 150, lat: -6.241, lng: 107.342 },
+];
 
-  useEffect(() => {
-    function handleScroll() {
-      setShowScrollTop(window.scrollY > 600);
-    }
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8003";
 
-  /* ── Derived state ── */
+export default function QuantumVaccineDashboard() {
+  const [districtName, setDistrictName] = useState("Karawang Vaccine Supply Chain");
+  const [depots, setDepots] = useState<Depot[]>(DEFAULT_KARAWANG_DEPOTS);
+  const [clinics, setClinics] = useState<Clinic[]>(DEFAULT_KARAWANG_CLINICS);
+  const [quantumResult, setQuantumResult] = useState<SolverResult | null>(null);
+  const [classicalResult, setClassicalResult] = useState<SolverResult | null>(null);
+  const [comparisonSummary, setComparisonSummary] = useState<ComparativeSummary | null>(null);
 
-  const openTasks = useMemo(
-    () => data.tasks.filter((task) => task.status === "open"),
-    [data.tasks],
-  );
-  const visibleRiskQueue = useMemo(
-    () =>
-      data.riskQueue.filter(
-        (alert) =>
-          alert.status !== "resolved" &&
-          (queueFilter === "all" || alert.riskLevel === queueFilter),
-      ),
-    [data.riskQueue, queueFilter],
-  );
-  const visibleInventory = useMemo(
-    () =>
-      data.inventory.filter(
-        (item) =>
-          inventoryFilter === "all" ||
-          item.status === "critical" ||
-          item.status === "warning",
-      ),
-    [data.inventory, inventoryFilter],
-  );
-  const criticalStock = useMemo(
-    () => data.inventory.filter((item) => item.status === "critical").length,
-    [data.inventory],
-  );
-  const activeStageCopy = pipelineStages.find((stage) => stage.id === activeStage);
+  const [activeSolver, setActiveSolver] = useState<"quantum" | "classical">("quantum");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /* ── Handlers ── */
+  const [showLocationManager, setShowLocationManager] = useState(false);
+  const [isPickingLocation, setIsPickingLocation] = useState(false);
+  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  function scrollToSection(target: string) {
-    setTimeout(() => {
-      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
-    setMobileMenuOpen(false);
-  }
+  // Fetch Dataset & Run Optimization
+  const fetchAndOptimize = async (customDepots?: Depot[], customClinics?: Clinic[]) => {
+    setLoading(true);
+    setError(null);
 
-  function handleNavClick(target: string) {
-    if (target === "network") {
-      setFocusedMetric("All signals");
-      setQueueFilter("all");
-      setInventoryFilter("all");
-      setActiveStage("reach");
-    }
-    if (target === "signals") {
-      setFocusedMetric("Urgent follow-ups");
-      setQueueFilter("urgent");
-      setActiveStage("reason");
-    }
-    if (target === "simulator") {
-      setActiveStage("reach");
-    }
-    if (target === "resources") {
-      setActiveStage("route");
-    }
-    scrollToSection(target);
-  }
-
-  async function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const query = searchQuery.trim().toLowerCase();
-
-    if (!query) {
-      await handleRefresh();
-      return;
-    }
-
-    if (["stock", "inventory", "supply", "refill", "stok"].some((k) => query.includes(k))) {
-      setInventoryFilter("attention");
-      setQueueFilter("all");
-      setFocusedMetric("Stock warnings");
-      setActiveStage("route");
-      scrollToSection("inventory");
-      return;
-    }
-
-    if (["route", "delivery", "rute"].some((k) => query.includes(k))) {
-      setFocusedMetric("Delivery routes");
-      setActiveStage("route");
-      scrollToSection("routes");
-      return;
-    }
-
-    if (["urgent", "risk", "mother", "alert", "ibu"].some((k) => query.includes(k))) {
-      setQueueFilter("urgent");
-      setInventoryFilter("all");
-      setFocusedMetric("Urgent follow-ups");
-      setActiveStage("reason");
-      scrollToSection("signals");
-      return;
-    }
-
-    if (["whatsapp", "message", "simulator", "intake"].some((k) => query.includes(k))) {
-      setActiveStage("reach");
-      scrollToSection("simulator");
-      return;
-    }
-
-    setQueueFilter("all");
-    setInventoryFilter("all");
-    setFocusedMetric("All signals");
-    setActiveStage("reason");
-    scrollToSection("signals");
-  }
-
-  function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const email = newsletterEmail.trim();
-    if (!email.includes("@") || !email.includes(".")) {
-      setNewsletterMessage("Enter a valid email address.");
-      return;
-    }
-    setNewsletterMessage("Signed up for MedRush pilot updates.");
-    setNewsletterEmail("");
-  }
-
-  async function handleRefresh() {
-    setBusyAction("refresh");
-    try {
-      const dashboard = await fetchDashboard();
-      setData(dashboard);
-      setApiStatus(dashboard === fallbackDashboard ? "offline" : "connected");
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  function handleSummaryFocus(label: string) {
-    setFocusedMetric(label);
-    if (label === "Urgent follow-ups") {
-      setQueueFilter("urgent");
-      setInventoryFilter("all");
-      setActiveStage("reason");
-      return;
-    }
-    if (label === "Stock warnings") {
-      setQueueFilter("all");
-      setInventoryFilter("attention");
-      setActiveStage("route");
-      return;
-    }
-    if (label === "Delivery routes") {
-      setQueueFilter("all");
-      setInventoryFilter("all");
-      setActiveStage("route");
-      return;
-    }
-    setQueueFilter("all");
-    setInventoryFilter("all");
-    setActiveStage("reach");
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsSubmitting(true);
-
-    const decoratedMessage = [
-      message.trim(),
-      missedDose ? "Missed dose reported." : "",
-      needsStock ? "Stock refill needed." : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    const payload: IntakePayload = { clinic, message: decoratedMessage, motherName };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s safety timeout
 
     try {
-      const result = await submitIntake(payload);
-      setData((current) => mergeIntake(current, result));
-      setIntakeResult(result);
-      setApiStatus("connected");
-    } catch {
-      const result = createOfflineIntake(payload);
-      setData((current) => mergeIntake(current, result));
-      setIntakeResult(result);
-      setApiStatus("offline");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+      const activeDepots = customDepots || depots;
+      const activeClinics = customClinics || clinics;
 
-  async function handleCompleteTask(taskId: string) {
-    setBusyAction(taskId);
-    try {
-      const dashboard = await completeTask(taskId);
-      setData(dashboard);
-      setApiStatus("connected");
-    } catch {
-      setData((current) => ({
-        ...current,
-        tasks: current.tasks.map((task) =>
-          task.id === taskId ? { ...task, status: "done" } : task,
-        ),
-      }));
-      setApiStatus("offline");
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function handleAlertStatus(alert: RiskAlert, status: AlertStatus) {
-    setBusyAction(`${alert.id}-${status}`);
-    try {
-      const dashboard = await updateAlertStatus(alert.id, status);
-      setData(dashboard);
-      setApiStatus("connected");
-    } catch {
-      setData((current) => ({
-        ...current,
-        auditTrail: [
-          {
-            actor: "District operator",
-            event: `Set alert for ${alert.motherName} to ${status.replace("_", " ")}.`,
-            id: `local-${alert.id}-${status}-${Date.now()}`,
-            time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-          },
-          ...current.auditTrail,
-        ],
-        riskQueue: current.riskQueue.map((item) =>
-          item.id === alert.id ? { ...item, status } : item,
-        ),
-      }));
-      setApiStatus("offline");
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function handleRestock(itemId: string) {
-    setBusyAction(`restock-${itemId}`);
-    try {
-      const dashboard = await restockInventory(itemId, 120);
-      setData(dashboard);
-      setApiStatus("connected");
-    } catch {
-      setData((current) => ({
-        ...current,
-        auditTrail: [
-          {
-            actor: "Supply team",
-            event: "Logged local restock of 120 units while API was unavailable.",
-            id: `local-restock-${itemId}-${Date.now()}`,
-            time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-          },
-          ...current.auditTrail,
-        ],
-        inventory: current.inventory.map((item) => {
-          if (item.id !== itemId) return item;
-          const stock = item.stock + 120;
-          return {
-            ...item,
-            daysRemaining: Math.max(item.daysRemaining, 14),
-            lastUpdated: `Today ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`,
-            status: stock >= item.reorderPoint ? "stable" : "warning",
-            stock,
-          };
+      const optRes = await fetch(`${API_BASE_URL}/api/optimize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          depots: activeDepots.length > 0 ? activeDepots : undefined,
+          clinics: activeClinics.length > 0 ? activeClinics : undefined,
         }),
-      }));
-      setApiStatus("offline");
-    } finally {
-      setBusyAction(null);
-    }
-  }
+        signal: controller.signal,
+      });
 
-  async function handleActivateRoute(routeId: string) {
-    setBusyAction(`route-${routeId}`);
-    setActiveStage("route");
-    try {
-      const dashboard = await activateRoute(routeId);
-      setData(dashboard);
-      setApiStatus("connected");
-    } catch {
-      setData((current) => ({
-        ...current,
-        auditTrail: [
-          {
-            actor: "Supply dispatcher",
-            event: "Activated delivery route locally while API was unavailable.",
-            id: `local-route-${routeId}-${Date.now()}`,
-            time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-          },
-          ...current.auditTrail,
-        ],
-        routes: current.routes.map((route) => ({
-          ...route,
-          status:
-            route.id === routeId ? "active" : route.status === "active" ? "queued" : route.status,
-        })),
-      }));
-      setApiStatus("offline");
-    } finally {
-      setBusyAction(null);
-    }
-  }
+      if (!optRes.ok) {
+        throw new Error(`Optimization API failed with status ${optRes.status}`);
+      }
 
-  /* ═══════════════  Render  ═══════════════ */
+      const resData = await optRes.json();
+      setDistrictName(resData.district_name);
+      setDepots(resData.depots);
+      setClinics(resData.clinics);
+      setQuantumResult(resData.quantum_result);
+      setClassicalResult(resData.classical_result);
+      setComparisonSummary(resData.comparison_summary);
+    } catch (err: unknown) {
+      console.error("Optimization error:", err);
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("Optimization request timed out. Please try again.");
+      } else {
+        const msg = err instanceof Error ? err.message : "Failed to connect to backend optimization API.";
+        setError(msg);
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndOptimize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (isPickingLocation) {
+      setSelectedCoords({ lat, lng });
+      setShowLocationManager(true);
+    }
+  };
+
+  const handleUpdateLocations = (newDepots: Depot[], newClinics: Clinic[]) => {
+    setDepots(newDepots);
+    setClinics(newClinics);
+    fetchAndOptimize(newDepots, newClinics);
+  };
+
+  const activeAllocations =
+    activeSolver === "quantum"
+      ? quantumResult?.allocations ?? []
+      : classicalResult?.allocations ?? [];
 
   return (
-    <main className="min-h-screen bg-[#f4f8f9] text-xdc-ink" id="top">
-      {/* ── Header ── */}
-      <Header
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        busyAction={busyAction}
-        onSearchSubmit={handleSearchSubmit}
-        onNavClick={handleNavClick}
-        onScrollToSection={scrollToSection}
-      />
-
-      {/* ── Network intro ── */}
-      <NetworkIntro
-        apiStatus={apiStatus}
-        busyAction={busyAction}
-        onRefresh={handleRefresh}
-      />
-
-      {/* ── Dashboard content ── */}
-      <section className="bg-[#f4f8f9]" aria-live="polite">
-        <div className="mx-auto grid max-w-[1780px] gap-10 px-4 py-14 sm:px-8 lg:gap-14 lg:px-20 lg:py-20">
-
-          {/* CTA row */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-            <ActionButton
-              className="!min-h-20 !text-xl sm:!min-h-24 sm:!text-2xl lg:!text-3xl lg:!min-h-28"
-              onClick={() => handleSummaryFocus("Urgent follow-ups")}
-            >
-              → Explore the Care Network
-            </ActionButton>
-            <ActionButton
-              className="!min-h-20 !text-xl sm:!min-h-24 sm:!text-2xl lg:!text-3xl lg:!min-h-28"
-              onClick={() => setActiveStage("reason")}
-            >
-              ! What needs action?
-            </ActionButton>
-          </div>
-
-          {/* Summary metrics */}
-          <SummaryMetrics
-            focusedMetric={focusedMetric}
-            isLoading={isLoading}
-            onSummaryFocus={handleSummaryFocus}
-            summary={data.summary}
-          />
-
-          {/* Pipeline stages */}
-          <PipelineStages
-            activeStage={activeStage}
-            setActiveStage={setActiveStage}
-          />
-
-          {/* Current focus bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#111518] pt-5 sm:pt-6">
-            <p className="text-base sm:text-xl">
-              <span className="font-semibold">Current focus:</span> {focusedMetric}
-            </p>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 sm:text-sm sm:tracking-[0.25em]">
-              {activeStageCopy?.label}: {activeStageCopy?.description}
-            </p>
-          </div>
-
-          {/* Two-column dashboard layout */}
-          <section className="grid gap-10 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] xl:gap-12">
-
-            {/* Left column */}
-            <div className="grid content-start gap-10 lg:gap-12">
-              {activeStage === "reason" && (
-                <RiskQueue
-                  busyAction={busyAction}
-                  onAlertStatus={handleAlertStatus}
-                  queueFilter={queueFilter}
-                  setActiveStage={setActiveStage}
-                  setFocusedMetric={setFocusedMetric}
-                  setQueueFilter={setQueueFilter}
-                  visibleRiskQueue={visibleRiskQueue}
-                />
-              )}
-
-              {activeStage === "route" && (
-                <InventoryWatch
-                  busyAction={busyAction}
-                  criticalStock={criticalStock}
-                  inventoryFilter={inventoryFilter}
-                  onRestock={handleRestock}
-                  setActiveStage={setActiveStage}
-                  setFocusedMetric={setFocusedMetric}
-                  setInventoryFilter={setInventoryFilter}
-                  visibleInventory={visibleInventory}
-                />
-              )}
-
-              {activeStage === "reach" && (
-                <SignalSimulator
-                  clinic={clinic}
-                  intakeResult={intakeResult}
-                  isSubmitting={isSubmitting}
-                  message={message}
-                  missedDose={missedDose}
-                  motherName={motherName}
-                  needsStock={needsStock}
-                  onSubmit={handleSubmit}
-                  setClinic={setClinic}
-                  setMessage={setMessage}
-                  setMissedDose={setMissedDose}
-                  setMotherName={setMotherName}
-                  setNeedsStock={setNeedsStock}
-                />
-              )}
+    <main className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans">
+      {/* Top Header Bar */}
+      <header className="border-b border-zinc-800/80 bg-[#09090b] sticky top-0 z-50 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative flex aspect-square size-9 rounded-full border border-zinc-700/60 before:absolute before:-inset-1 before:rounded-full before:border before:border-zinc-800/40">
+              <Cpu className="m-auto size-4 text-white" strokeWidth={1.5} />
             </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-base tracking-tight text-white">
+                  MedRush Quantum
+                </h1>
+                <span className="bg-[#141417] text-zinc-300 border border-zinc-800 text-[10px] font-mono px-2 py-0.5 rounded">
+                  QAOA Demo
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 font-sans">
+                Quantum Optimization (QUBO) vs Classical ILP for Vaccine Distribution
+              </p>
+            </div>
+          </div>
 
-            {/* Right column (sidebar) */}
-            <aside className="grid content-start gap-10 lg:gap-12">
-              {activeStage === "reason" && (
-                <TaskQueue
-                  busyAction={busyAction}
-                  onCompleteTask={handleCompleteTask}
-                  openTasks={openTasks}
-                />
-              )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowLocationManager(!showLocationManager)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center gap-2 border ${
+                showLocationManager
+                  ? "bg-zinc-800 text-white border-zinc-600"
+                  : "bg-[#141417] text-zinc-300 border-zinc-800 hover:border-zinc-700"
+              }`}
+            >
+              <Sliders className="size-3.5" />
+              {showLocationManager ? "Hide Location Editor" : "Manage Locations"}
+            </button>
 
-              {activeStage === "route" && (
-                <DeliveryRoutes
-                  busyAction={busyAction}
-                  onActivateRoute={handleActivateRoute}
-                  routes={data.routes}
-                />
-              )}
-
-              <AuditTrail auditTrail={data.auditTrail} />
-            </aside>
-
-          </section>
+            <button
+              onClick={() => fetchAndOptimize(depots, clinics)}
+              disabled={loading}
+              className="bg-white hover:bg-zinc-200 text-black font-semibold text-xs px-3.5 py-1.5 rounded-lg border border-white transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              <RotateCw className={`size-3.5 text-black ${loading ? "animate-spin" : ""}`} strokeWidth={2} />
+              {loading ? "Solving QUBO..." : "Re-Run Optimization"}
+            </button>
+          </div>
         </div>
-      </section>
+      </header>
 
-      {/* ── Footer ── */}
-      <Footer
-        newsletterEmail={newsletterEmail}
-        newsletterMessage={newsletterMessage}
-        onNavClick={handleNavClick}
-        onNewsletterSubmit={handleNewsletterSubmit}
-        onRefresh={handleRefresh}
-        setNewsletterEmail={setNewsletterEmail}
-      />
+      {/* Main Content Layout */}
+      <div className="max-w-7xl mx-auto w-full px-6 py-6 space-y-6 flex-1">
+        {error && (
+          <div className="bg-[#0c0c0e] border border-zinc-800/80 text-zinc-300 px-4 py-3 rounded-xl text-sm flex items-center gap-3">
+            <AlertCircle className="size-4 text-white" strokeWidth={1.5} />
+            <div>
+              <b className="text-white">Optimization Backend Offline / Timed Out:</b> {error}.
+            </div>
+          </div>
+        )}
 
-      {/* ── Scroll to top button ── */}
-      {showScrollTop && (
-        <ActionButton
-          aria-label="Scroll to top"
-          className="fixed bottom-6 right-6 z-50 !h-10 !w-10 !min-h-0 !p-0 text-lg font-bold sm:bottom-8 sm:right-8 sm:!h-12 sm:!w-12"
-          onClick={() => scrollToSection("top")}
-        >
-          ↑
-        </ActionButton>
-      )}
+        {/* Collapsible Location Input Manager */}
+        {showLocationManager && (
+          <LocationManager
+            depots={depots}
+            clinics={clinics}
+            onUpdateLocations={handleUpdateLocations}
+            selectedCoords={selectedCoords}
+            isPickingLocation={isPickingLocation}
+            setIsPickingLocation={setIsPickingLocation}
+          />
+        )}
+
+        {/* Map & View Controls Header */}
+        <div className="bg-[#0c0c0e] border border-zinc-800/80 rounded-xl p-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-zinc-400">Visualization Mode:</span>
+            <div className="bg-[#141417] p-1 rounded-lg border border-zinc-800 flex gap-1">
+              <button
+                onClick={() => setActiveSolver("quantum")}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                  activeSolver === "quantum"
+                    ? "bg-zinc-800 text-white border border-zinc-700"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                QAOA Quantum Plan
+              </button>
+
+              <button
+                onClick={() => setActiveSolver("classical")}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                  activeSolver === "classical"
+                    ? "bg-zinc-800 text-white border border-zinc-700"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Classical ILP Plan
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono text-zinc-400">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-white"></span>
+              Depots ({depots.length})
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-zinc-400"></span>
+              Clinics ({clinics.length})
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Server className="size-3.5 text-zinc-400" strokeWidth={1.5} />
+              CARTO Dark Matter
+            </div>
+          </div>
+        </div>
+
+        {/* Leaflet CARTO Map Section */}
+        <div className="w-full h-[520px]">
+          <MapComponent
+            depots={depots}
+            clinics={clinics}
+            allocations={activeAllocations}
+            activeSolver={activeSolver}
+            onMapClick={handleMapClick}
+            isPickingLocation={isPickingLocation}
+          />
+        </div>
+
+        {/* Side-by-Side Benchmark & Metrics Section */}
+        <ComparisonCards
+          quantumResult={quantumResult}
+          classicalResult={classicalResult}
+          comparisonSummary={comparisonSummary}
+          activeSolver={activeSolver}
+          setActiveSolver={setActiveSolver}
+        />
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-800/80 bg-[#09090b] py-4 px-6 text-center text-xs text-zinc-500 font-mono">
+        <p>
+          MedRush Quantum Optimization &bull; Qiskit Aer Simulation &bull; Learning Prototype
+        </p>
+      </footer>
     </main>
   );
 }

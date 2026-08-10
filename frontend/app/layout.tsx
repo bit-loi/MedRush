@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MedRush District Dashboard",
+  title: "Quantum Vaccine Distribution Demo | MedRush Logistics",
   description:
-    "WhatsApp-first maternal health adherence and supply coordination for Indonesian district health teams.",
+    "End-to-end prototype demonstrating quantum optimization (QUBO + QAOA via Qiskit Aer) vs classical ILP baseline for district vaccine supply logistics.",
 };
 
 export default function RootLayout({
@@ -22,7 +22,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={inter.className}>{children}</body>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+      </head>
+      <body className={`${inter.className} bg-slate-950 text-slate-100 min-h-screen antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }
