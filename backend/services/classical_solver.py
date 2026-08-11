@@ -48,10 +48,12 @@ def solve_classical_ilp(depots: List[Depot], clinics: List[Clinic]) -> SolverRes
             f"Depot_{i}_Capacity",
         )
 
-    # Solve using COIN-OR CBC Solver (bundled with PuLP)
+    t0_solve = time.time()
     status_code = prob.solve(pulp.PULP_CBC_CMD(msg=False))
-    t1 = time.time()
+    t1_solve = time.time()
+    solve_time_ms = round((t1_solve - t0_solve) * 1000.0, 2)
 
+    t0_route = time.time()
     allocations: List[AllocationRoute] = []
     total_cost = 0.0
     unmet_demand = 0
@@ -89,14 +91,17 @@ def solve_classical_ilp(depots: List[Depot], clinics: List[Clinic]) -> SolverRes
         if assigned_depot_idx is None:
             unmet_demand += clinics[j].demand
 
-    solve_time_ms = round((t1 - t0) * 1000.0, 2)
+    t1_route = time.time()
+    routing_time_ms = round((t1_route - t0_route) * 1000.0, 2)
     status_str = pulp.LpStatus[status_code]
 
     return SolverResult(
         solver_name="Classical Baseline (PuLP ILP)",
         solver_type="classical",
         solve_time_ms=solve_time_ms,
+        routing_time_ms=routing_time_ms,
         total_cost=round(total_cost, 2),
+        penalty_cost=0.0,
         unmet_demand=unmet_demand,
         qubit_count=None,
         qubo_energy=None,

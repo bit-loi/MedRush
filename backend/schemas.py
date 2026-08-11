@@ -30,7 +30,9 @@ class SolverResult(BaseModel):
     solver_name: str
     solver_type: str  # "quantum" or "classical"
     solve_time_ms: float
+    routing_time_ms: float = 0.0
     total_cost: float
+    penalty_cost: float = 0.0
     unmet_demand: int
     qubit_count: Optional[int] = None
     qubo_energy: Optional[float] = None

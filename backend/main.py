@@ -76,22 +76,27 @@ def run_optimization(request: OptimizationRequest):
     
     if classical_res.solve_time_ms > 0:
         ratio_val = quantum_res.solve_time_ms / classical_res.solve_time_ms
-        time_ratio_str = f"QAOA is {ratio_val:.1f}x solve time compared to Classical ILP"
+        time_ratio_str = f"QAOA Pure Solver is {ratio_val:.1f}x solve time compared to Classical ILP ({quantum_res.solve_time_ms:.1f}ms vs {classical_res.solve_time_ms:.1f}ms)"
     else:
         time_ratio_str = "Sub-millisecond comparison"
 
     if cost_diff == 0:
         verdict = (
-            f"QAOA successfully achieved the exact global optimal cost ({quantum_res.total_cost:,.2f}) "
+            f"QAOA successfully achieved the exact global optimal cost (${quantum_res.total_cost:,.2f}) "
             f"matching the classical baseline on {quantum_res.qubit_count} qubits."
+        )
+    elif quantum_res.unmet_demand > 0:
+        verdict = (
+            f"Classical ILP solved in {classical_res.solve_time_ms:.1f} ms with optimal cost ${classical_res.total_cost:,.2f} (100% coverage). "
+            f"QAOA yielded cost ${quantum_res.total_cost:,.2f} including ${quantum_res.penalty_cost:,.2f} penalty for {quantum_res.unmet_demand} unmet doses."
         )
     elif cost_diff > 0:
         verdict = (
-            f"Classical ILP solved in {classical_res.solve_time_ms:.1f} ms with cost {classical_res.total_cost:,.2f}. "
-            f"QAOA QUBO ground state yielded cost {quantum_res.total_cost:,.2f} (+{cost_diff:,.2f} soft penalty delta)."
+            f"Classical ILP solved in {classical_res.solve_time_ms:.1f} ms with cost ${classical_res.total_cost:,.2f}. "
+            f"QAOA QUBO ground state yielded cost ${quantum_res.total_cost:,.2f} (+${cost_diff:,.2f} penalty/soft constraint gap)."
         )
     else:
-        verdict = f"QAOA achieved a lower objective value cost by {abs(cost_diff):,.2f}."
+        verdict = f"QAOA achieved cost ${quantum_res.total_cost:,.2f}."
 
     comparison_summary = ComparativeSummary(
         cost_difference=cost_diff,

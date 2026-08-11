@@ -3,67 +3,67 @@ import numpy as np
 from typing import List, Tuple
 from schemas import Depot, Clinic
 
-DEFAULT_DISTRICT_NAME = "Karawang District Vaccine Supply Chain"
+DEFAULT_DISTRICT_NAME = "Regional Medical Vaccine Supply Network"
 
 DEFAULT_DEPOTS: List[Depot] = [
     Depot(
         id="depot-1",
-        name="Karawang Central Hub",
+        name="Central Medical Logistics Hub",
         stock=600,
-        lat=-6.3125,
-        lng=107.2974
+        lat=37.7749,
+        lng=-122.4194
     ),
     Depot(
         id="depot-2",
-        name="Cikarang Supply Depot",
+        name="North Regional Distribution Depot",
         stock=500,
-        lat=-6.2911,
-        lng=107.1352
+        lat=37.8044,
+        lng=-122.2712
     ),
     Depot(
         id="depot-3",
-        name="Cikampek Logistics Post",
+        name="East Logistics Hub",
         stock=450,
-        lat=-6.4173,
-        lng=107.4560
+        lat=37.6879,
+        lng=-122.1599
     ),
 ]
 
 DEFAULT_CLINICS: List[Clinic] = [
     Clinic(
         id="clinic-1",
-        name="Puskesmas Telukjambe",
+        name="Metro Community Health Clinic",
         demand=200,
-        lat=-6.3250,
-        lng=107.3010
+        lat=37.7690,
+        lng=-122.4480
     ),
     Clinic(
         id="clinic-2",
-        name="Puskesmas Klari",
+        name="Valley Regional Care Center",
         demand=250,
-        lat=-6.3500,
-        lng=107.3600
+        lat=37.8200,
+        lng=-122.2500
     ),
     Clinic(
         id="clinic-3",
-        name="Puskesmas Rengasdengklok",
+        name="Northern Health Station",
         demand=180,
-        lat=-6.1600,
-        lng=107.2900
+        lat=37.8700,
+        lng=-122.2700
     ),
     Clinic(
         id="clinic-4",
-        name="Puskesmas Majalaya",
+        name="Eastern Community Care",
         demand=220,
-        lat=-6.3400,
-        lng=107.4100
+        lat=37.7000,
+        lng=-122.1800
     ),
     Clinic(
         id="clinic-5",
-        name="Puskesmas Lemahabang",
+        name="Harbor View Health Center",
         demand=190,
-        lat=-6.2700,
-        lng=107.4400
+        lat=37.7300,
+        lng=-122.3800
     ),
 ]
 

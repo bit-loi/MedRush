@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, MapPin, Building2, Package, Check, MousePointer } from "lucide-react";
+import { Plus, Trash2, MapPin, Building2, Package, MousePointer } from "lucide-react";
 import { Depot, Clinic } from "./MapComponent";
 
 interface LocationManagerProps {

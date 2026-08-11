@@ -7,7 +7,9 @@ export interface SolverResult {
   solver_name: string;
   solver_type: "quantum" | "classical";
   solve_time_ms: number;
+  routing_time_ms?: number;
   total_cost: number;
+  penalty_cost?: number;
   unmet_demand: number;
   qubit_count?: number;
   qubo_energy?: number;
@@ -95,10 +97,10 @@ export default function ComparisonCards({
               </div>
               <div>
                 <CardTitle className="text-sm font-semibold text-white">
-                  Quantum Optimization (QAOA)
+                  Quantum QAOA Solver
                 </CardTitle>
                 <CardDescription className="text-[11px] text-zinc-400 mt-0.5">
-                  Qiskit Aer Simulator
+                  NumPy Statevector Engine
                 </CardDescription>
               </div>
             </div>
@@ -109,10 +111,15 @@ export default function ComparisonCards({
           <CardContent className="pt-3">
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="bg-[#141417] p-3 rounded-lg border border-zinc-800/80">
-                <span className="text-[11px] text-zinc-400 font-mono">Solve Time</span>
+                <span className="text-[11px] text-zinc-400 font-mono">Pure Solve Time</span>
                 <div className="text-base font-bold text-white font-mono mt-0.5">
                   {quantumResult.solve_time_ms} ms
                 </div>
+                {quantumResult.routing_time_ms !== undefined && (
+                  <div className="text-[10px] text-zinc-500 font-mono mt-1">
+                    + {quantumResult.routing_time_ms} ms OSRM route
+                  </div>
+                )}
               </div>
 
               <div className="bg-[#141417] p-3 rounded-lg border border-zinc-800/80">
@@ -120,6 +127,11 @@ export default function ComparisonCards({
                 <div className="text-base font-bold text-white font-mono mt-0.5">
                   ${quantumResult.total_cost.toLocaleString()}
                 </div>
+                {(quantumResult.penalty_cost ?? 0) > 0 && (
+                  <div className="text-[10px] text-amber-400 font-mono mt-1">
+                    incl. ${quantumResult.penalty_cost?.toLocaleString()} unmet penalty
+                  </div>
+                )}
               </div>
 
               <div className="bg-[#141417] p-3 rounded-lg border border-zinc-800/80">
@@ -169,10 +181,15 @@ export default function ComparisonCards({
           <CardContent className="pt-3">
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="bg-[#141417] p-3 rounded-lg border border-zinc-800/80">
-                <span className="text-[11px] text-zinc-400 font-mono">Solve Time</span>
+                <span className="text-[11px] text-zinc-400 font-mono">Pure Solve Time</span>
                 <div className="text-base font-bold text-white font-mono mt-0.5">
                   {classicalResult.solve_time_ms} ms
                 </div>
+                {classicalResult.routing_time_ms !== undefined && (
+                  <div className="text-[10px] text-zinc-500 font-mono mt-1">
+                    + {classicalResult.routing_time_ms} ms OSRM route
+                  </div>
+                )}
               </div>
 
               <div className="bg-[#141417] p-3 rounded-lg border border-zinc-800/80">

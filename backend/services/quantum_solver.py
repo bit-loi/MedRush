@@ -139,13 +139,15 @@ def solve_quantum_qaoa(depots: List[Depot], clinics: List[Clinic]) -> SolverResu
     bits = x_bits[best_state_idx]
     qubo_energy = float(energies[best_state_idx])
 
-    t1 = time.time()
+    t1_solve = time.time()
+    solve_time_ms = round((t1_solve - t0) * 1000.0, 2)
 
     # Reshape bits into M x N binary matrix
     sol_matrix = np.array(bits).reshape((num_depots, num_clinics))
 
+    t0_route = time.time()
     allocations: List[AllocationRoute] = []
-    total_cost = 0.0
+    base_cost = 0.0
     unmet_demand = 0
 
     for j in range(num_clinics):
@@ -174,22 +176,32 @@ def solve_quantum_qaoa(depots: List[Depot], clinics: List[Clinic]) -> SolverResu
                         geometry=road_geometry,
                     )
                 )
-                total_cost += cost
+                base_cost += cost
                 break
 
         if assigned_depot_idx is None:
             unmet_demand += clinics[j].demand
 
-    solve_time_ms = round((t1 - t0) * 1000.0, 2)
+    t1_route = time.time()
+    routing_time_ms = round((t1_route - t0_route) * 1000.0, 2)
+
+    # Calculate Fairness Penalty: $50 per dose of unmet demand to penalize unserved clinics
+    PENALTY_PER_UNMET_DOSE = 50.0
+    penalty_cost = round(unmet_demand * PENALTY_PER_UNMET_DOSE, 2)
+    total_cost = round(base_cost + penalty_cost, 2)
+
+    status_str = "Optimal (QAOA Ground State)" if unmet_demand == 0 else f"Sub-optimal ({unmet_demand} doses unmet penalty applied)"
 
     return SolverResult(
-        solver_name="Quantum QAOA (Statevector Variational Circuit)",
+        solver_name="Quantum QAOA (NumPy-Accelerated Statevector Simulator)",
         solver_type="quantum",
         solve_time_ms=solve_time_ms,
-        total_cost=round(total_cost, 2),
+        routing_time_ms=routing_time_ms,
+        total_cost=total_cost,
+        penalty_cost=penalty_cost,
         unmet_demand=unmet_demand,
         qubit_count=qubit_count,
         qubo_energy=round(qubo_energy, 2),
-        status="Optimal (QAOA Quantum Ground State)",
+        status=status_str,
         allocations=allocations,
     )

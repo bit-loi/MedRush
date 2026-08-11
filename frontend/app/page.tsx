@@ -31,26 +31,26 @@ interface Clinic {
   lng: number;
 }
 
-const DEFAULT_KARAWANG_DEPOTS: Depot[] = [
-  { id: "d1", name: "Dinkes Karawang", stock: 500, lat: -6.306, lng: 107.302 },
-  { id: "d2", name: "Gudang Farmasi Klari", stock: 450, lat: -6.352, lng: 107.361 },
-  { id: "d3", name: "Depot Rengasdengklok", stock: 350, lat: -6.159, lng: 107.297 },
+const DEFAULT_DEPOTS: Depot[] = [
+  { id: "d1", name: "Central Logistics Hub", stock: 600, lat: 37.7749, lng: -122.4194 },
+  { id: "d2", name: "North Distribution Depot", stock: 500, lat: 37.8044, lng: -122.2712 },
+  { id: "d3", name: "East Logistics Hub", stock: 450, lat: 37.6879, lng: -122.1599 },
 ];
 
-const DEFAULT_KARAWANG_CLINICS: Clinic[] = [
-  { id: "c1", name: "Puskesmas Karawang Barat", demand: 200, lat: -6.301, lng: 107.291 },
-  { id: "c2", name: "Puskesmas Telukjambe", demand: 180, lat: -6.328, lng: 107.315 },
-  { id: "c3", name: "Puskesmas Klari", demand: 250, lat: -6.345, lng: 107.375 },
-  { id: "c4", name: "Puskesmas Rengasdengklok", demand: 220, lat: -6.162, lng: 107.294 },
-  { id: "c5", name: "Puskesmas Rawamerta", demand: 150, lat: -6.241, lng: 107.342 },
+const DEFAULT_CLINICS: Clinic[] = [
+  { id: "c1", name: "Metro Community Clinic", demand: 200, lat: 37.769, lng: -122.448 },
+  { id: "c2", name: "Valley Care Center", demand: 250, lat: 37.82, lng: -122.25 },
+  { id: "c3", name: "Northern Health Station", demand: 180, lat: 37.87, lng: -122.27 },
+  { id: "c4", name: "Eastern Community Care", demand: 220, lat: 37.7, lng: -122.18 },
+  { id: "c5", name: "Harbor View Center", demand: 190, lat: 37.73, lng: -122.38 },
 ];
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8003";
 
 export default function QuantumVaccineDashboard() {
-  const [districtName, setDistrictName] = useState("Karawang Vaccine Supply Chain");
-  const [depots, setDepots] = useState<Depot[]>(DEFAULT_KARAWANG_DEPOTS);
-  const [clinics, setClinics] = useState<Clinic[]>(DEFAULT_KARAWANG_CLINICS);
+  const [districtName, setDistrictName] = useState("Regional Medical Vaccine Supply Network");
+  const [depots, setDepots] = useState<Depot[]>(DEFAULT_DEPOTS);
+  const [clinics, setClinics] = useState<Clinic[]>(DEFAULT_CLINICS);
   const [quantumResult, setQuantumResult] = useState<SolverResult | null>(null);
   const [classicalResult, setClassicalResult] = useState<SolverResult | null>(null);
   const [comparisonSummary, setComparisonSummary] = useState<ComparativeSummary | null>(null);
@@ -152,7 +152,7 @@ export default function QuantumVaccineDashboard() {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-sans">
-                Quantum Optimization (QUBO) vs Classical ILP for Vaccine Distribution
+                {districtName} &bull; QUBO & QAOA Optimization
               </p>
             </div>
           </div>
